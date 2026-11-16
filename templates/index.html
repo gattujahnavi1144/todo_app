@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily Tasks | Northstar</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172b3a;
+      --muted: #71818d;
+      --line: #e5ebee;
+      --surface: #ffffff;
+      --canvas: #f4f7f8;
+      --accent: #167c74;
+      --accent-dark: #11645e;
+      --accent-soft: #e8f4f2;
+      --danger: #a44949;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .topbar {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 max(6vw, 24px);
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--accent);
+      color: white;
+      font-size: 18px;
+    }
+
+    .workspace-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    main {
+      width: min(1000px, calc(100% - 40px));
+      margin: 64px auto;
+    }
+
+    .eyebrow {
+      margin: 0 0 9px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 40px);
+      letter-spacing: -0.045em;
+      line-height: 1.15;
+    }
+
+    .intro {
+      margin: 12px 0 30px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .task-card {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+      box-shadow: 0 10px 28px rgb(23 43 58 / 5%);
+    }
+
+    .card-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .card-heading h2 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: -0.015em;
+    }
+
+    .task-count {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .add-form {
+      display: grid;
+      grid-template-columns: minmax(180px, 2fr) repeat(3, minmax(120px, 1fr));
+      align-items: end;
+      gap: 10px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .form-field { min-width: 0; }
+
+    .form-field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .add-form input, .add-form select {
+      min-width: 0;
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #d8e1e5;
+      border-radius: 8px;
+      outline: none;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+      transition: border-color 150ms, box-shadow 150ms;
+    }
+
+    .add-form input::placeholder { color: #9aa8b0; }
+    .add-form input:focus, .add-form select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgb(22 124 116 / 12%);
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      clip-path: inset(50%);
+    }
+
+    button {
+      border: 0;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .add-button {
+      grid-column: 1 / -1;
+      justify-self: end;
+      padding: 12px 17px;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      font-size: 14px;
+      font-weight: 650;
+      white-space: nowrap;
+      transition: background 150ms;
+    }
+
+    .add-button:hover { background: var(--accent-dark); }
+    .add-button:focus-visible, .delete-button:focus-visible {
+      outline: 3px solid rgb(22 124 116 / 35%);
+      outline-offset: 2px;
+    }
+
+    .error {
+      margin: 0;
+      padding: 16px 24px;
+      color: var(--danger);
+      font-size: 13px;
+    }
+
+    .table-container { overflow-x: auto; }
+
+    .task-table {
+      width: 100%;
+      min-width: 600px;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .task-table th, .task-table td {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .task-table th {
+      background: var(--canvas);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .task-table tbody tr:last-child td { border-bottom: 0; }
+    .task-title { overflow-wrap: anywhere; }
+    .due-date { white-space: nowrap; }
+
+    .delete-button {
+      padding: 7px 9px;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .delete-button:hover {
+      background: #fbefef;
+      color: var(--danger);
+    }
+
+    .empty-state {
+      padding: 34px 24px 38px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty-icon {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      margin: 0 auto 12px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 20px;
+    }
+
+    .empty-state strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .empty-state p { margin: 0; font-size: 13px; }
+
+    @media (max-width: 760px) {
+      .add-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 520px) {
+      .topbar { height: 64px; }
+      .workspace-label { font-size: 10px; }
+      main { margin: 42px auto; }
+      .card-heading, .add-form { padding-right: 17px; padding-left: 17px; }
+      .add-form { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">N</span> Northstar</div>
+    <div class="workspace-label">Personal workspace</div>
+  </header>
+
+  <main>
+    <p class="eyebrow">Daily planning</p>
+    <h1>Make today count.</h1>
+    <p class="intro">Keep your priorities clear and your day moving forward.</p>
+
+    <section class="task-card" aria-labelledby="tasks-heading">
+      <div class="card-heading">
+        <h2 id="tasks-heading">Your tasks</h2>
+        <span class="task-count">{{ tasks|length }} open</span>
+      </div>
+
+      <form class="add-form" method="post">
+        <input type="hidden" name="action" value="add">
+        <div class="form-field">
+          <label for="task">Task name</label>
+          <input id="task" name="task" type="text" maxlength="200" value="{{ form_values.get('task', '') }}" placeholder="What needs to get done?" required>
+        </div>
+        <div class="form-field">
+          <label for="priority">Priority</label>
+          <select id="priority" name="priority" required>
+            <option value="" disabled {% if not form_values.get('priority') %}selected{% endif %}>Select priority</option>
+            {% for priority in priorities %}
+              <option value="{{ priority }}" {% if form_values.get('priority') == priority %}selected{% endif %}>{{ priority }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="category">Category</label>
+          <select id="category" name="category" required>
+            <option value="" disabled {% if not form_values.get('category') %}selected{% endif %}>Select category</option>
+            {% for category in categories %}
+              <option value="{{ category }}" {% if form_values.get('category') == category %}selected{% endif %}>{{ category }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="due_date">Due date</label>
+          <input id="due_date" name="due_date" type="date" value="{{ form_values.get('due_date', '') }}" required>
+        </div>
+        <button class="add-button" type="submit">Add task</button>
+      </form>
+
+      {% if error %}
+        <p class="error" role="alert">{{ error }}</p>
+      {% endif %}
+
+      {% if tasks %}
+        <div class="table-container">
+          <table class="task-table">
+            <caption class="visually-hidden">Tasks sorted by due date, earliest first</caption>
+            <thead>
+              <tr>
+                <th scope="col">Task name</th>
+                <th scope="col">Priority</th>
+                <th scope="col">Category</th>
+                <th scope="col" aria-sort="ascending">Due date</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for task in tasks %}
+                <tr>
+                  <td class="task-title">{{ task.task }}</td>
+                  <td>{{ task.priority }}</td>
+                  <td>{{ task.category }}</td>
+                  <td class="due-date"><time datetime="{{ task.due_date }}">{{ task.due_date }}</time></td>
+                  <td>
+                    <form method="post">
+                      <input type="hidden" name="action" value="delete">
+                      <input type="hidden" name="task_index" value="{{ loop.index0 }}">
+                      <button class="delete-button" type="submit" aria-label="Delete {{ task.task }}">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <span class="empty-icon" aria-hidden="true">✓</span>
+          <strong>A clear slate.</strong>
+          <p>Add a task above to get started.</p>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>
